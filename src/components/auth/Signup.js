@@ -3,14 +3,16 @@ import styles from "./Signup.module.css";
 import { useAuth } from "../../contexts/auth-contexts";
 import { Link, useHistory } from "react-router-dom";
 import { getAuth, updateProfile } from "firebase/auth";
+import { auth } from "../../firebase";
 
 const Signup = (props) => {
   const emailRef = useRef();
   const nameRef = useRef();
   const passwordRef = useRef();
   const passwordConfirmRef = useRef();
-  const { signup, updateName } = useAuth();
+  const { signup, updateName, currentUser } = useAuth();
   const [error, setError] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const history = useHistory();
 
@@ -26,20 +28,33 @@ const Signup = (props) => {
 
     signup(emailRef.current.value, passwordRef.current.value)
       .then((result) => {
-        
+        updateProfile(auth.currentUser, {
+          displayName: name,
+        })
+          .then(() => {
+            // Profile updated!
+            // ...
+          })
+          .catch((error) => {
+            // An error occurred
+            console.log(`updateProfile error: ${error}`);
+          });
       })
-      .catch((err) => {});
+      .catch((err) => {
+        console.log(`signup error: ${err}`);
+        setError(`Failed to create an account`);
+      });
 
-    try {
-      setError("");
-      setLoading(true);
-      signup(emailRef.current.value, passwordRef.current.value);
-      await updateName(nameRef.current.value);
-      history.push("/");
-    } catch (error) {
-      setError(`Failed to create an account`);
-    }
-    setLoading(false);
+    // try {
+    //   setError("");
+    //   setLoading(true);
+    //   signup(emailRef.current.value, passwordRef.current.value);
+    //   await updateName(nameRef.current.value);
+    //   history.push("/");
+    // } catch (error) {
+    //   setError(`Failed to create an account`);
+    // }
+    // setLoading(false);
   }
 
   return (
@@ -54,7 +69,15 @@ const Signup = (props) => {
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.control}>
             <label htmlFor="name">Name</label>
-            <input type="text" required ref={nameRef} name="name" id="name" />
+            <input
+              type="text"
+              required
+              ref={nameRef}
+              value={name}
+              name="name"
+              onChange={event => setName(event.target.value)}
+              id="name"
+            />
           </div>
 
           <div className={styles.control}>
